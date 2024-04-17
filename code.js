@@ -1,9 +1,40 @@
+
 const videoElement = document.getElementById('input_video');
 const canvasElement = document.getElementById('my_canvas');
 const canvasCtx = canvasElement.getContext('2d');
+const textConsole = document.getElementById('textConsole');
+textConsole.innerHTML = "Jump vision";
+//get width and height display properties
+var widthDisplay = canvasElement.width;
+var heightDisplay = canvasElement.height;
+var positionButtonFinal = [100,50];
 
-var x = 0;
-var y = 0;
+
+//sound
+var soundPoint = new Audio('sound/point.mp3');
+var errorPoint = new Audio('sound/error.mp3');
+
+
+//position obstacle 
+var xs = [widthDisplay];
+
+//positionInitialObstacle
+var heightObstacleLarge = 0;
+var heightObstacleInitial = 0;
+var widtObstacle = 0;
+
+//step obstacle
+var step = 10;
+//change obstacle
+var wasCollision = false;
+//point and collision
+var pointMore = 0;
+var pointLess = 0;
+var updateConsole = false;
+
+//true parameters 
+var trueParameters = false;
+
 
 function moveLine(x, y) {
     //init path
@@ -16,24 +47,109 @@ function moveLine(x, y) {
     canvasCtx.stroke();
 }
 
-
-async function getCameraSelection() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(device => device.kind === 'videoinput');
-    
-    // If there's only one camera, use it directly
-    if (videoDevices.length === 1) {
-      return videoDevices[0].deviceId;
+function evalueCollisiont(canvas,points){
+  canvasCtx.strokeStyle = "red";
+  canvasCtx.lineWidth = 3;
+  canvas.fillStyle = 'red';
+  //init path
+  canvasCtx.beginPath();
+  canvas.arc(points[31].x*widthDisplay, points[31].y*heightDisplay,10,0,2*Math.PI);
+  //canvas draw
+  canvasCtx.stroke();
+  if(trueParameters){
+    if(points[31].x*widthDisplay>xs[0] && points[31].x*widthDisplay<xs[0]+widtObstacle || 
+  points[32].x*widthDisplay>xs[0] && points[32].x*widthDisplay<xs[0]+widtObstacle){
+      updateConsole = true;
+        if(points[31].y*heightDisplay>heightObstacleInitial-heightObstacleLarge && points[32].y*heightDisplay>heightObstacleInitial-heightObstacleLarge){
+          wasCollision = true;
+        }
+    }else{
+      if(points[31].x*widthDisplay>xs[0] && points[31].x*widthDisplay>xs[0]+widtObstacle && updateConsole){
+        updateConsole = false
+        if(wasCollision){
+          pointLess +=1;
+          textConsole.innerHTML = "Punto: "+pointMore+ " Colisión: "+ pointLess;
+          errorPoint.play();
+        }else{
+          soundPoint.play();
+          pointMore +=1;
+          textConsole.innerHTML = "Punto: "+pointMore+ " Colisión: "+ pointLess;
+        }
+      }
     }
-    
-    // Prompt user to select a camera if there are multiple options
-    let selectedCameraId;
-    if (videoDevices.length > 1) {
-      selectedCameraId = await prompt("Select Camera:", videoDevices.map(device => device.label).join("\n"));
-    }
-    
-    return selectedCameraId;
   }
+}
+
+/**
+ * Start game with parameters
+ * @param {*} canvasCtx 
+ * @param {*} points 
+ */
+function clickStart(canvasCtx,points) {
+    if (points[20].x*widthDisplay>0 && 
+      points[20].y*heightDisplay>0 && 
+      points[20].x*widthDisplay<positionButtonFinal[0] && 
+      points[20].y*heightDisplay<positionButtonFinal[1]){
+        console.log("clickStart");
+        trueParameters = true;
+      }
+}
+
+
+
+/**
+ * Function draw button for init parameters
+ * @param {*} canvasCtx 
+ * @param {*} points 
+ */
+function buttonStart(canvasCtx,points) {
+  canvasCtx.strokeStyle = "black";
+  canvasCtx.lineWidth = 1;
+  canvasCtx.fillStyle = 'green';
+  canvasCtx.beginPath();
+  canvasCtx.rect(0,0,positionButtonFinal[0],positionButtonFinal[1]);
+  canvasCtx.fill();
+  canvasCtx.fillStyle = 'white';
+  canvasCtx.font = "24px Arial";
+  canvasCtx.fillText("Start",positionButtonFinal[0]/4,positionButtonFinal[1]/2);
+  canvasCtx.stroke();
+}
+
+
+/**
+ * 
+ * @param {*} canvasCtx 
+ * @param {*} points
+ * Creaate a obstacle for simulation 
+ */
+function drawObstacle(canvasCtx, points) {
+  canvasCtx.strokeStyle = "black";
+  canvasCtx.lineWidth = 3;
+  canvasCtx.fillStyle = 'red';
+  canvasCtx.beginPath();
+  //reduce position display
+  xs[0] -= 10;
+  if(trueParameters == false){
+    //width obstacle is
+    widtObstacle = widthDisplay/8;
+    heightObstacleLarge = Math.abs((points[30].x - points[29].x)*widthDisplay);
+    heightObstacleInitial = points[31].y*heightDisplay;
+  }
+  
+  //create obstacles
+  canvasCtx.rect(xs[0], heightObstacleInitial, widtObstacle, -heightObstacleLarge);
+  canvasCtx.fill();
+//canvasCtx.fill();
+  canvasCtx.stroke();
+  //restar box
+  if(xs[0]<0){
+    
+    xs[0] = widthDisplay;
+    //reinit point more
+    wasCollision = false;
+  }
+}
+
 
 //on results
 function onResults(results) {
@@ -41,6 +157,9 @@ function onResults(results) {
       //grid.updateLandmarks([]);
       return;
     }
+
+    
+
     canvasCtx.save(); // Guarda el estado actual del contexto de dibujo del canvas
 
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height); // Limpia todo el canvas
@@ -65,12 +184,16 @@ function onResults(results) {
     drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#FFFF', lineWidth: 6});
     drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#000000', lineWidth: 2});
     
+    
+    //draw obstacles
+    drawObstacle(canvasCtx, results.poseLandmarks);
+    //button start
+    buttonStart(canvasCtx, results.poseLandmarks);
+    //click start
+    clickStart(canvasCtx, results.poseLandmarks);
+    //evalue collision
+    evalueCollisiont(canvasCtx,results.poseLandmarks);
 
-    console.log(results.poseLandmarks[0].x);
-    canvasCtx.beginPath();
-
-    canvasCtx.fillRect(10,10,20,20);
-    canvasCtx.stroke();
 
     canvasCtx.restore(); // Restaura el estado guardado del canvas
     
