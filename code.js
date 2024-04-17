@@ -2,6 +2,9 @@ const videoElement = document.getElementById("input_video");
 const canvasElement = document.getElementById("my_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 const textConsole = document.getElementById("textConsole");
+const inputVelocity = document.getElementById("inputVelocity");
+const inputWidthBox = document.getElementById("inputWidthBox");
+
 textConsole.innerHTML = "Jump vision";
 //get width and height display properties
 var widthDisplay = canvasElement.width;
@@ -21,7 +24,7 @@ var heightObstacleInitial = 0;
 var widtObstacle = 0;
 
 //step obstacle
-var step = 10;
+var step = inputVelocity.value;
 //change obstacle
 var wasCollision = false;
 //point and collision
@@ -31,17 +34,6 @@ var updateConsole = false;
 
 //true parameters
 var trueParameters = false;
-
-function moveLine(x, y) {
-  //init path
-  canvasCtx.beginPath();
-  //move path
-  canvasCtx.moveTo(10, 10);
-  //canvas draw line
-  canvasCtx.lineTo(x, y);
-  //canvas draw
-  canvasCtx.stroke();
-}
 
 function evalueCollision(canvas, points) {
   canvasCtx.strokeStyle = "red";
@@ -58,19 +50,18 @@ function evalueCollision(canvas, points) {
   );
   //canvas draw
   canvasCtx.stroke();
+
   if (trueParameters) {
-    //evalue position in x
-    if (
-      (points[31].x * widthDisplay > xs[0] &&
-        points[31].x * widthDisplay < xs[0] + widtObstacle) ||
+    if ((points[31].x * widthDisplay > xs[0] && points[31].x*widthDisplay<xs[0]+widtObstacle) ||
       (points[32].x * widthDisplay > xs[0] &&
         points[32].x * widthDisplay < xs[0] + widtObstacle)
     ) {
+      
       updateConsole = true;
       //evalue position in y
       if (
         points[31].y * heightDisplay >
-          heightObstacleInitial - heightObstacleLarge &&
+          heightObstacleInitial - heightObstacleLarge ||
         points[32].y * heightDisplay >
           heightObstacleInitial - heightObstacleLarge
       ) {
@@ -78,10 +69,10 @@ function evalueCollision(canvas, points) {
       }
     } else {
       if (
-        points[31].x * widthDisplay > xs[0] &&
-        points[31].x * widthDisplay > xs[0] + widtObstacle &&
-        updateConsole
+        points[31].x * widthDisplay > xs[0]+widtObstacle &&
+        updateConsole == true && points[32].x * widthDisplay>xs[0]+widtObstacle
       ) {
+        
         updateConsole = false;
         if (wasCollision) {
           pointLess += 1;
@@ -150,10 +141,10 @@ function drawObstacle(canvasCtx, points) {
   canvasCtx.fillStyle = "red";
   canvasCtx.beginPath();
   //reduce position display
-  xs[0] -= 10;
+  xs[0] -= parseInt(inputVelocity.value);
   if (trueParameters == false) {
     //width obstacle is
-    widtObstacle = widthDisplay / 8;
+    widtObstacle = parseInt(inputWidthBox.value);
     heightObstacleLarge = Math.abs(
       (points[30].x - points[29].x) * widthDisplay
     );
