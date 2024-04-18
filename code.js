@@ -56,7 +56,6 @@ function evalueCollision(canvas, points) {
       (points[32].x * widthDisplay > xs[0] &&
         points[32].x * widthDisplay < xs[0] + widtObstacle)
     ) {
-      
       updateConsole = true;
       //evalue position in y
       if (
